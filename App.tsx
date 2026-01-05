@@ -290,8 +290,8 @@ const App: React.FC = () => {
   return (
     <div className='min-h-screen bg-slate-50 flex flex-col md:flex-row'>
       <Toaster position='top-right' reverseOrder={false} />
-      <aside className='w-full md:w-80 bg-white border-r border-slate-200 p-6 flex-shrink-0 flex flex-col'>
-        <div className='flex items-center justify-between mb-8'>
+      <aside className='w-full md:w-80 bg-white border-r border-slate-200  p-6 flex-shrink-0 flex flex-col'>
+        <div className='flex items-center justify-between mb-8 sticky top-8'>
           <div className='flex items-center gap-2'>
             <div className='bg-indigo-600 p-2 rounded-lg shadow-lg shadow-indigo-100'>
               <Calendar className='text-white w-5 h-5' />
@@ -305,7 +305,7 @@ const App: React.FC = () => {
           </button>
         </div>
 
-        <div className='mb-8'>
+        <div className='mb-8 sticky top-24'>
           <div className='p-4 bg-slate-50 rounded-2xl border border-slate-100 mb-4'>
             <div className='flex items-center gap-3'>
               <div className='w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold'>
