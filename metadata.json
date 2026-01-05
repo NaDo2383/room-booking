@@ -1,0 +1,6 @@
+
+{
+  "name": "Confero Scheduler",
+  "description": "Smart resource management for mid-sized teams with a single shared conference room. Features conflict-free booking and fair-use management.",
+  "requestFramePermissions": []
+}
