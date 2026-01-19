@@ -162,20 +162,8 @@ const App: React.FC = () => {
     const hasConflict = bookings.some(
       (b) =>
         b.date === newBooking.date &&
-        newBooking.start <= b.startTime &&
-        newBooking.end >= b.endTime,
-    )
-
-    console.log("hasConflict:", hasConflict)
-    console.log("newBooking:", newBooking)
-    console.log(
-      "bookings:",
-      bookings.filter(
-        (b) =>
-          b.date === newBooking.date &&
-          newBooking.start <= b.endTime &&
-          newBooking.end >= b.startTime,
-      ),
+        newBooking.start < b.endTime &&
+        newBooking.end > b.startTime,
     )
 
     if (hasConflict) {
@@ -432,9 +420,6 @@ const App: React.FC = () => {
             <div className='relative p-6 bg-slate-50/10 min-h-[500px]'>
               <div className='space-y-6 relative z-10'>
                 {timeSlots.map((time) => {
-                  console.log("time", time)
-                  console.log("currentBookings", currentBookings)
-
                   const bookingAtTime = currentBookings.find(
                     (b) => b.startTime.split(":")[0] === time.split(":")[0],
                   )
@@ -626,11 +611,12 @@ const App: React.FC = () => {
                         setNewBooking({ ...newBooking, start: e.target.value })
                       }
                       className='w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-mono appearance-none'>
-                      {Array.from({ length: 96 }).map((_, i) => {
-                        const h = Math.floor(i / 4)
+                      {Array.from({ length: 37 }).map((_, i) => {
+                        const totalMinutes = 540 + i * 15
+                        const h = Math.floor(totalMinutes / 60)
                           .toString()
                           .padStart(2, "0")
-                        const m = ((i % 4) * 15).toString().padStart(2, "0")
+                        const m = (totalMinutes % 60).toString().padStart(2, "0")
                         const t = `${h}:${m}`
                         return (
                           <option key={t} value={t}>
@@ -653,11 +639,12 @@ const App: React.FC = () => {
                         setNewBooking({ ...newBooking, end: e.target.value })
                       }
                       className='w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-mono appearance-none'>
-                      {Array.from({ length: 96 }).map((_, i) => {
-                        const h = Math.floor(i / 4)
+                      {Array.from({ length: 37 }).map((_, i) => {
+                        const totalMinutes = 540 + i * 15
+                        const h = Math.floor(totalMinutes / 60)
                           .toString()
                           .padStart(2, "0")
-                        const m = ((i % 4) * 15).toString().padStart(2, "0")
+                        const m = (totalMinutes % 60).toString().padStart(2, "0")
                         const t = `${h}:${m}`
                         return (
                           <option key={t} value={t}>
