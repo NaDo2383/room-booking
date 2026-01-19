@@ -371,9 +371,6 @@ const App: React.FC = () => {
           </h3>
           <ul className='space-y-3'>
             <li className='text-[11px] text-slate-600 flex gap-2'>
-              <span className='text-indigo-400 font-bold'>•</span> Max duration: 90 mins.
-            </li>
-            <li className='text-[11px] text-slate-600 flex gap-2'>
               <span className='text-indigo-400 font-bold'>•</span> Only owners can delete.
             </li>
           </ul>
