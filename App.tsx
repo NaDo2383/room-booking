@@ -66,7 +66,13 @@ export interface Booking {
   userId: string
 }
 
-const getTodayString = () => new Date().toISOString().split("T")[0]
+const getTodayString = () => {
+  const d = new Date()
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, "0")
+  const day = String(d.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
+}
 
 const App: React.FC = () => {
   const [user, setUser] = useState<FirebaseUser | null>(null)
@@ -107,7 +113,7 @@ const App: React.FC = () => {
       },
       (error) => {
         console.error("Firestore Listen Error:", error)
-      }
+      },
     )
     return () => unsubscribe()
   }, [user])
@@ -148,10 +154,7 @@ const App: React.FC = () => {
     if (!user || !newBooking.title || !newBooking.organizer) return
 
     // Duration Logic
-    const startHour = parseInt(newBooking.start.split(":")[0])
-    const endHour = parseInt(newBooking.end.split(":")[0])
-
-    if (endHour <= startHour) {
+    if (newBooking.end <= newBooking.start) {
       toast.error("End time must be after start time")
       return
     }
@@ -159,8 +162,20 @@ const App: React.FC = () => {
     const hasConflict = bookings.some(
       (b) =>
         b.date === newBooking.date &&
-        ((newBooking.start >= b.startTime && newBooking.start < b.endTime) ||
-          (newBooking.end > b.startTime && newBooking.end <= b.endTime))
+        newBooking.start <= b.startTime &&
+        newBooking.end >= b.endTime,
+    )
+
+    console.log("hasConflict:", hasConflict)
+    console.log("newBooking:", newBooking)
+    console.log(
+      "bookings:",
+      bookings.filter(
+        (b) =>
+          b.date === newBooking.date &&
+          newBooking.start <= b.endTime &&
+          newBooking.end >= b.startTime,
+      ),
     )
 
     if (hasConflict) {
@@ -204,8 +219,11 @@ const App: React.FC = () => {
     return Array.from({ length: 7 }, (_, i) => {
       const d = new Date()
       d.setDate(d.getDate() + i)
+      const year = d.getFullYear()
+      const month = String(d.getMonth() + 1).padStart(2, "0")
+      const day = String(d.getDate()).padStart(2, "0")
       return {
-        full: d.toISOString().split("T")[0],
+        full: `${year}-${month}-${day}`,
         dayName: i === 0 ? "Today" : d.toLocaleDateString("en-US", { weekday: "short" }),
         dateNum: d.getDate(),
       }
@@ -214,25 +232,32 @@ const App: React.FC = () => {
 
   const timeSlots = Array.from(
     { length: 11 },
-    (_, i) => `${(i + 8).toString().padStart(2, "0")}:00`
+    (_, i) => `${(i + 8).toString().padStart(2, "0")}:00`,
   )
 
-  const currentBookings = useMemo(
-    () => bookings.filter((b) => b.date === selectedDate),
-    [bookings, selectedDate]
-  )
+  const [now, setNow] = useState(new Date())
 
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 60000)
+    return () => clearInterval(timer)
+  }, [])
+
+  const currentBookings = useMemo(() => {
+    return bookings.filter((b) => b.date === selectedDate)
+  }, [bookings, selectedDate])
+
+  // Calculate live status (re-runs when 'now' updates)
   const isRoomOccupiedNow = useMemo(() => {
-    const now = new Date()
     const today = getTodayString()
     const currentTime = `${now.getHours().toString().padStart(2, "0")}:${now
       .getMinutes()
       .toString()
       .padStart(2, "0")}`
+
     return bookings.some(
-      (b) => b.date === today && currentTime >= b.startTime && currentTime <= b.endTime
+      (b) => b.date === today && currentTime >= b.startTime && currentTime < b.endTime,
     )
-  }, [bookings])
+  }, [bookings, now])
 
   const getStyleForType = (type: string) => {
     switch (type) {
@@ -407,7 +432,12 @@ const App: React.FC = () => {
             <div className='relative p-6 bg-slate-50/10 min-h-[500px]'>
               <div className='space-y-6 relative z-10'>
                 {timeSlots.map((time) => {
-                  const bookingAtTime = currentBookings.find((b) => b.startTime === time)
+                  console.log("time", time)
+                  console.log("currentBookings", currentBookings)
+
+                  const bookingAtTime = currentBookings.find(
+                    (b) => b.startTime.split(":")[0] === time.split(":")[0],
+                  )
                   const isOwner = bookingAtTime?.userId === user.uid
 
                   const duration = bookingAtTime
@@ -424,7 +454,7 @@ const App: React.FC = () => {
                         {bookingAtTime && (
                           <div
                             className={`absolute top-0 left-0 right-0 m-1 p-3 rounded-xl border-l-4 transition-all hover:scale-[1.01] flex flex-col justify-between ${getStyleForType(
-                              bookingAtTime.type
+                              bookingAtTime.type,
                             )}`}
                             style={{
                               height: `calc(${duration} * 3rem + ${
@@ -589,27 +619,55 @@ const App: React.FC = () => {
                   <label className='text-xs font-bold text-slate-500 uppercase px-1 font-mono'>
                     Start
                   </label>
-                  <input
-                    type='time'
-                    value={newBooking.start}
-                    onChange={(e) =>
-                      setNewBooking({ ...newBooking, start: e.target.value })
-                    }
-                    className='w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-mono'
-                  />
+                  <div className='relative'>
+                    <select
+                      value={newBooking.start}
+                      onChange={(e) =>
+                        setNewBooking({ ...newBooking, start: e.target.value })
+                      }
+                      className='w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-mono appearance-none'>
+                      {Array.from({ length: 96 }).map((_, i) => {
+                        const h = Math.floor(i / 4)
+                          .toString()
+                          .padStart(2, "0")
+                        const m = ((i % 4) * 15).toString().padStart(2, "0")
+                        const t = `${h}:${m}`
+                        return (
+                          <option key={t} value={t}>
+                            {t}
+                          </option>
+                        )
+                      })}
+                    </select>
+                    <ChevronRight className='w-4 h-4 text-slate-400 absolute right-4 top-1/2 -translate-y-1/2 rotate-90 pointer-events-none' />
+                  </div>
                 </div>
                 <div className='space-y-1.5'>
                   <label className='text-xs font-bold text-slate-500 uppercase px-1 font-mono'>
                     End
                   </label>
-                  <input
-                    type='time'
-                    value={newBooking.end}
-                    onChange={(e) =>
-                      setNewBooking({ ...newBooking, end: e.target.value })
-                    }
-                    className='w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-mono'
-                  />
+                  <div className='relative'>
+                    <select
+                      value={newBooking.end}
+                      onChange={(e) =>
+                        setNewBooking({ ...newBooking, end: e.target.value })
+                      }
+                      className='w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-mono appearance-none'>
+                      {Array.from({ length: 96 }).map((_, i) => {
+                        const h = Math.floor(i / 4)
+                          .toString()
+                          .padStart(2, "0")
+                        const m = ((i % 4) * 15).toString().padStart(2, "0")
+                        const t = `${h}:${m}`
+                        return (
+                          <option key={t} value={t}>
+                            {t}
+                          </option>
+                        )
+                      })}
+                    </select>
+                    <ChevronRight className='w-4 h-4 text-slate-400 absolute right-4 top-1/2 -translate-y-1/2 rotate-90 pointer-events-none' />
+                  </div>
                 </div>
               </div>
 
