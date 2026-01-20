@@ -377,6 +377,10 @@ const App: React.FC = () => {
             <li className='text-[11px] text-slate-600 flex gap-2'>
               <span className='text-indigo-400 font-bold'>•</span> Only owners can delete.
             </li>
+            <li className='text-[11px] text-slate-600 flex gap-2'>
+              <span className='text-indigo-400 font-bold'>•</span> Minimum booking time is
+              30 minutes.
+            </li>
           </ul>
         </div>
       </aside>
