@@ -218,10 +218,14 @@ const App: React.FC = () => {
     })
   }, [])
 
-  const timeSlots = Array.from(
-    { length: 11 },
-    (_, i) => `${(i + 8).toString().padStart(2, "0")}:00`,
-  )
+  const timeSlots = Array.from({ length: 19 }, (_, i) => {
+    const totalMinutes = 540 + i * 30
+    const h = Math.floor(totalMinutes / 60)
+      .toString()
+      .padStart(2, "0")
+    const m = (totalMinutes % 60).toString().padStart(2, "0")
+    return `${h}:${m}`
+  })
 
   const [now, setNow] = useState(new Date())
 
@@ -417,39 +421,47 @@ const App: React.FC = () => {
             <div className='relative p-6 bg-slate-50/10 min-h-[500px]'>
               <div className='space-y-6 relative z-10'>
                 {timeSlots.map((time) => {
-                  const bookingAtTime = currentBookings.find(
-                    (b) => b.startTime.split(":")[0] === time.split(":")[0],
-                  )
+                  const [h, m] = time.split(":").map(Number)
+                  const slotMinutes = h * 60 + m
+
+                  const bookingAtTime = currentBookings.find((b) => {
+                    const [bh, bm] = b.startTime.split(":").map(Number)
+                    const bStart = bh * 60 + bm
+                    return bStart >= slotMinutes && bStart < slotMinutes + 30
+                  })
                   const isOwner = bookingAtTime?.userId === user.uid
 
-                  const duration = bookingAtTime
-                    ? parseInt(bookingAtTime.endTime.split(":")[0]) -
-                      parseInt(bookingAtTime.startTime.split(":")[0])
-                    : 1
+                  let duration = 1
+                  if (bookingAtTime) {
+                    const [sh, sm] = bookingAtTime.startTime.split(":").map(Number)
+                    const [eh, em] = bookingAtTime.endTime.split(":").map(Number)
+                    const diff = eh * 60 + em - (sh * 60 + sm)
+                    duration = diff / 30
+                  }
 
                   return (
                     <div key={time} className='flex gap-4 group'>
                       <div className='w-12 text-[10px] font-bold text-slate-400 pt-1 font-mono'>
                         {time}
                       </div>
-                      <div className='flex-1 h-12 border-t border-slate-100 relative'>
+                      <div className='flex-1 h-6 border-t border-slate-100 relative'>
                         {bookingAtTime && (
                           <div
-                            className={`absolute top-0 left-0 right-0 m-1 p-3 rounded-xl border-l-4 transition-all hover:scale-[1.01] flex flex-col justify-between ${getStyleForType(
+                            className={`absolute top-0 left-0 right-0 m-1 p-1 rounded-xl border-l-4 transition-all hover:scale-[1.01] flex flex-col justify-between ${getStyleForType(
                               bookingAtTime.type,
                             )}`}
                             style={{
-                              height: `calc(${duration} * 3rem + ${
+                              height: `calc(${duration} * 1.5rem + ${
                                 duration - 0.3
                               } * 1.5rem)`,
                               zIndex: 20,
                             }}>
                             <div className='flex justify-between items-start'>
-                              <div className='overflow-hidden mr-2'>
-                                <p className='font-bold text-sm truncate leading-tight'>
-                                  {bookingAtTime.title}
+                              <div className='overflow-hidden  flex  gap-2'>
+                                <p className='font-bold text-sm truncate leading-tight flex items-end'>
+                                  {bookingAtTime.title}:
                                 </p>
-                                <p className='text-[10px] font-medium opacity-70 truncate'>
+                                <p className='text-[10px] font-medium opacity-70 truncate flex items-end'>
                                   {bookingAtTime.organizer}
                                 </p>
                               </div>
@@ -608,8 +620,8 @@ const App: React.FC = () => {
                         setNewBooking({ ...newBooking, start: e.target.value })
                       }
                       className='w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-mono appearance-none'>
-                      {Array.from({ length: 37 }).map((_, i) => {
-                        const totalMinutes = 540 + i * 15
+                      {Array.from({ length: 19 }).map((_, i) => {
+                        const totalMinutes = 540 + i * 30
                         const h = Math.floor(totalMinutes / 60)
                           .toString()
                           .padStart(2, "0")
@@ -636,8 +648,8 @@ const App: React.FC = () => {
                         setNewBooking({ ...newBooking, end: e.target.value })
                       }
                       className='w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-mono appearance-none'>
-                      {Array.from({ length: 37 }).map((_, i) => {
-                        const totalMinutes = 540 + i * 15
+                      {Array.from({ length: 19 }).map((_, i) => {
+                        const totalMinutes = 540 + i * 30
                         const h = Math.floor(totalMinutes / 60)
                           .toString()
                           .padStart(2, "0")
